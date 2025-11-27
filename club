@@ -1,0 +1,275 @@
+// src/App.jsx
+import { useEffect, useMemo, useState } from "react";
+
+const SHEET_CSV_URL =
+  "https://docs.google.com/spreadsheets/d/1zkllRcUeoG6e6E_hR-cMv8c-Dv4b_WV8XQLPsjhzUow/export?format=csv&gid=0";
+
+function App() {
+  const [rows, setRows] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [search, setSearch] = useState("");
+  const [cart, setCart] = useState([]);
+  const [copyMessage, setCopyMessage] = useState("");
+
+  // CSV 불러오기
+  useEffect(() => {
+    async function load() {
+      try {
+        setLoading(true);
+        const res = await fetch(SHEET_CSV_URL);
+        if (!res.ok) throw new Error("시트를 불러오지 못했습니다.");
+        const text = await res.text();
+        const parsed = parseCsv(text);
+        setRows(parsed);
+        setError("");
+      } catch (e) {
+        console.error(e);
+        setError(e.message || "에러가 발생했습니다.");
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
+  }, []);
+
+  // 검색된 결과
+  const filteredRows = useMemo(() => {
+    if (!search.trim()) return rows;
+    const q = search.trim().toLowerCase();
+    return rows.filter((r) =>
+      [r.code, r.name, r.product].some(
+        (v) => v && v.toLowerCase().includes(q)
+      )
+    );
+  }, [rows, search]);
+
+  const addToCart = (row) => {
+    setCart((prev) => {
+      const found = prev.find((item) => item.code === row.code);
+      if (found) {
+        return prev.map((item) =>
+          item.code === row.code
+            ? { ...item, qty: item.qty + 1 }
+            : item
+        );
+      }
+      return [
+        ...prev,
+        {
+          code: row.code,
+          name: row.name,
+          product: row.product,
+          qty: 1,
+        },
+      ];
+    });
+  };
+
+  const updateQty = (code, newQty) => {
+    const value = Number(newQty) || 0;
+    setCart((prev) =>
+      prev.map((item) =>
+        item.code === code ? { ...item, qty: value } : item
+      )
+    );
+  };
+
+  const removeFromCart = (code) => {
+    setCart((prev) => prev.filter((item) => item.code !== code));
+  };
+
+  const clearCart = () => {
+    setCart([]);
+  };
+
+  const copyCart = async () => {
+    if (!cart.length) return;
+
+    // 품번 \t 수량 형식으로 줄바꿈
+    const text = cart
+      .filter((item) => item.qty > 0)
+      .map((item) => `${item.code}\t${item.qty}`)
+      .join("\n");
+
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopyMessage("클립보드에 복사됐어요!");
+      setTimeout(() => setCopyMessage(""), 2000);
+    } catch (e) {
+      console.error(e);
+      setCopyMessage("복사에 실패했습니다. (https 환경 필요)");
+      setTimeout(() => setCopyMessage(""), 3000);
+    }
+  };
+
+  return (
+    <div className="app">
+      <header className="app-header">
+        <h1>클럽 검색 & 장바구니</h1>
+        <p className="subtitle">
+          구글시트 기준 A(품번) / B(상품명) / F(제품) 검색 → 장바구니 → 품번+수량 복사
+        </p>
+      </header>
+
+      <main className="layout">
+        {/* 왼쪽: 검색 & 결과 */}
+        <section className="panel">
+          <div className="panel-header">
+            <h2>검색</h2>
+            <input
+              type="text"
+              placeholder="품번 / 상품명 / 제품 명 검색"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="search-input"
+            />
+          </div>
+
+          {loading && <p>시트 불러오는 중...</p>}
+          {error && <p className="error">에러: {error}</p>}
+
+          {!loading && !error && (
+            <div className="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>품번 (A)</th>
+                    <th>상품명 (B)</th>
+                    <th>제품 (F)</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredRows.map((row) => (
+                    <tr key={row.code}>
+                      <td>{row.code}</td>
+                      <td>{row.name}</td>
+                      <td>{row.product}</td>
+                      <td>
+                        <button
+                          type="button"
+                          onClick={() => addToCart(row)}
+                        >
+                          담기
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                  {!filteredRows.length && (
+                    <tr>
+                      <td colSpan={4} style={{ textAlign: "center" }}>
+                        검색 결과가 없습니다.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+
+        {/* 오른쪽: 장바구니 */}
+        <section className="panel">
+          <div className="panel-header">
+            <h2>장바구니</h2>
+            <div className="cart-actions">
+              <button
+                type="button"
+                onClick={copyCart}
+                disabled={!cart.length}
+              >
+                품번+수량 복사
+              </button>
+              <button
+                type="button"
+                onClick={clearCart}
+                disabled={!cart.length}
+              >
+                비우기
+              </button>
+            </div>
+          </div>
+          {copyMessage && (
+            <p className="copy-message">{copyMessage}</p>
+          )}
+
+          {cart.length === 0 ? (
+            <p>담긴 상품이 없습니다.</p>
+          ) : (
+            <div className="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>품번</th>
+                    <th>상품명</th>
+                    <th>제품</th>
+                    <th>수량</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {cart.map((item) => (
+                    <tr key={item.code}>
+                      <td>{item.code}</td>
+                      <td>{item.name}</td>
+                      <td>{item.product}</td>
+                      <td>
+                        <input
+                          type="number"
+                          min="0"
+                          value={item.qty}
+                          onChange={(e) =>
+                            updateQty(item.code, e.target.value)
+                          }
+                          style={{ width: "60px" }}
+                        />
+                      </td>
+                      <td>
+                        <button
+                          type="button"
+                          onClick={() => removeFromCart(item.code)}
+                        >
+                          삭제
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+
+              <div className="hint">
+                복사 형식 예시: <br />
+                <code>
+                  737RJ34&nbsp;&nbsp;&nbsp;2
+                  <br />
+                  742RH34&nbsp;&nbsp;&nbsp;1
+                </code>
+                <br />
+                (품번과 수량 사이에 탭 문자)
+              </div>
+            </div>
+          )}
+        </section>
+      </main>
+    </div>
+  );
+}
+
+// 매우 단순한 CSV 파서 (콤마가 값 안에 들어가지 않는다는 가정)
+function parseCsv(text) {
+  const lines = text.trim().split(/\r?\n/);
+  if (lines.length <= 1) return [];
+
+  // 0행은 헤더 → 버리고, A~F만 사용
+  return lines.slice(1).map((line) => {
+    const cols = line.split(",");
+    return {
+      code: (cols[0] || "").trim(), // 품번 A
+      name: (cols[1] || "").trim(), // 상품명 B
+      product: (cols[5] || "").trim(), // 제품 F
+    };
+  });
+}
+
+export default App;
