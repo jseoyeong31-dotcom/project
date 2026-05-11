@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>바위너구리 웹펫</title>
+<style>
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    overflow: hidden;
+    background: linear-gradient(180deg, #f7efe4 0%, #f3e4d1 100%);
+    font-family: Arial, sans-serif;
+  }
+
+  .page-title {
+    position: fixed;
+    left: 20px;
+    top: 18px;
+    color: #5b3b22;
+    font-weight: 900;
+    font-size: 22px;
+    opacity: 0.8;
+    user-select: none;
+  }
+
+  .hint {
+    position: fixed;
+    left: 20px;
+    top: 50px;
+    color: #87664a;
+    font-size: 13px;
+    user-select: none;
+  }
+
+  #petWrap {
+    position: fixed;
+    left: 120px;
+    top: 180px;
+    width: 130px;
+    height: 130px;
+    cursor: pointer;
+    user-select: none;
+    z-index: 10;
+  }
+
+  .bubble {
+    position: absolute;
+    left: 50%;
+    bottom: 118px;
+    transform: translateX(-50%);
+    min-width: 120px;
+    max-width: 260px;
+    padding: 10px 12px;
+    background: #fff;
+    border: 3px solid #3b2a1d;
+    border-radius: 14px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #3b2a1d;
+    text-align: center;
+    line-height: 1.35;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    pointer-events: none;
+    box-shadow: 4px 4px 0 rgba(59,42,29,0.15);
+  }
+
+  .bubble.show { opacity: 1; }
+
+  .bubble::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    bottom: -12px;
+    width: 18px;
+    height: 18px;
+    background: #fff;
+    border-right: 3px solid #3b2a1d;
+    border-bottom: 3px solid #3b2a1d;
+    transform: translateX(-50%) rotate(45deg);
+  }
+
+  .hyrax {
+    position: absolute;
+    left: 15px;
+    top: 22px;
+    width: 100px;
+    height: 82px;
+    image-rendering: pixelated;
+    animation: bob 1.6s infinite steps(2);
+  }
+
+  .body {
+    position: absolute;
+    left: 14px;
+    top: 24px;
+    width: 76px;
+    height: 58px;
+    background: #9b6a3e;
+    border: 4px solid #3a281c;
+    border-radius: 42% 44% 38% 36%;
+    box-shadow: inset 10px 0 0 #b78350, inset -8px -6px 0 #7c4f2d;
+  }
+
+  .belly {
+    position: absolute;
+    left: 29px;
+    top: 39px;
+    width: 44px;
+    height: 34px;
+    background: #d6b383;
+    border-radius: 50%;
+    opacity: 0.9;
+  }
+
+  .head {
+    position: absolute;
+    left: 17px;
+    top: 2px;
+    width: 70px;
+    height: 58px;
+    background: #a87545;
+    border: 4px solid #3a281c;
+    border-radius: 46% 46% 42% 42%;
+    box-shadow: inset 8px 0 0 #bc8b5b, inset -7px -5px 0 #825330;
+  }
+
+  .ear {
+    position: absolute;
+    top: -4px;
+    width: 18px;
+    height: 18px;
+    background: #8d5e38;
+    border: 4px solid #3a281c;
+    border-radius: 50% 50% 30% 30%;
+  }
+
+  .ear.left { left: 12px; }
+  .ear.right { right: 12px; }
+
+  .eye {
+    position: absolute;
+    top: 24px;
+    width: 9px;
+    height: 12px;
+    background: #111;
+    border-radius: 50%;
+    box-shadow: 2px 2px 0 #fff inset;
+  }
+
+  .eye.left { left: 20px; }
+  .eye.right { right: 20px; }
+
+  .nose {
+    position: absolute;
+    left: 50%;
+    top: 34px;
+    width: 12px;
+    height: 9px;
+    background: #24170f;
+    border-radius: 50%;
+    transform: translateX(-50%);
+  }
+
+  .mouth {
+    position: absolute;
+    left: 50%;
+    top: 45px;
+    width: 20px;
+    height: 8px;
+    border-bottom: 3px solid #2d1d14;
+    border-radius: 50%;
+    transform: translateX(-50%);
+  }
+
+  .paw {
+    position: absolute;
+    bottom: -2px;
+    width: 18px;
+    height: 12px;
+    background: #5c3823;
+    border: 3px solid #3a281c;
+    border-radius: 50%;
+  }
+
+  .paw.left { left: 25px; }
+  .paw.right { right: 25px; }
+
+  .tail {
+    position: absolute;
+    right: -5px;
+    bottom: 8px;
+    width: 26px;
+    height: 22px;
+    background: #7c4f2d;
+    border: 4px solid #3a281c;
+    border-radius: 50%;
+    z-index: -1;
+  }
+
+  .shadow {
+    position: absolute;
+    left: 18px;
+    bottom: 8px;
+    width: 92px;
+    height: 16px;
+    background: rgba(79, 50, 28, 0.2);
+    border-radius: 50%;
+  }
+
+  .phone {
+    position: absolute;
+    right: 8px;
+    top: 50px;
+    width: 22px;
+    height: 34px;
+    background: #20242a;
+    border: 3px solid #111;
+    border-radius: 5px;
+    display: none;
+    transform: rotate(-8deg);
+  }
+
+  .phone::after {
+    content: "";
+    position: absolute;
+    left: 4px;
+    top: 5px;
+    width: 10px;
+    height: 18px;
+    background: #7dd3fc;
+    opacity: 0.85;
+  }
+
+  .snack {
+    position: absolute;
+    left: 68px;
+    top: 77px;
+    font-size: 22px;
+    display: none;
+    filter: drop-shadow(2px 2px 0 rgba(0,0,0,0.15));
+  }
+
+  .ball {
+    position: fixed;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, #fff 0 8%, #f97316 9% 55%, #7c2d12 56% 100%);
+    border: 3px solid #3b2a1d;
+    display: none;
+    z-index: 9;
+    box-shadow: 3px 3px 0 rgba(0,0,0,0.12);
+  }
+
+  .stock-mode .phone { display: block; }
+  .eating-mode .snack { display: block; }
+
+  .stock-mode .eye.left,
+  .stock-mode .eye.right {
+    height: 8px;
+    top: 28px;
+  }
+
+  .sleep-mode .eye.left,
+  .sleep-mode .eye.right {
+    height: 3px;
+    top: 30px;
+    box-shadow: none;
+  }
+
+  .sleep-mode::after {
+    content: "Zz";
+    position: absolute;
+    right: 4px;
+    top: -12px;
+    color: #3b2a1d;
+    font-size: 20px;
+    font-weight: 900;
+  }
+
+  @keyframes bob {
+    0% { transform: translateY(0); }
+    100% { transform: translateY(3px); }
+  }
+
+  .controls {
+    position: fixed;
+    right: 16px;
+    bottom: 16px;
+    width: 200px;
+    background: rgba(255,255,255,0.9);
+    border: 1px solid rgba(59,42,29,0.12);
+    border-radius: 16px;
+    padding: 12px;
+    color: #5b3b22;
+    font-size: 12px;
+    line-height: 1.6;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+    z-index: 20;
+  }
+
+  .controls b {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 13px;
+  }
+
+  .btn-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 6px;
+    margin-bottom: 8px;
+  }
+
+  button {
+    border: 0;
+    border-radius: 10px;
+    padding: 9px 10px;
+    background: #6b4423;
+    color: #fff;
+    font-weight: 800;
+    cursor: pointer;
+    font-size: 12px;
+  }
+
+  button:hover { background: #8a5a31; }
+  button:active { transform: scale(0.98); }
+  button:disabled { opacity: 0.55; cursor: not-allowed; }
+
+  .rps-box {
+    display: none;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 5px;
+    margin-top: 6px;
+  }
+
+  .rps-box.show { display: grid; }
+
+  .rps-box button {
+    padding: 8px 4px;
+    background: #eee2d2;
+    color: #4b301c;
+  }
+
+  @media (max-width: 520px) {
+    .controls {
+      left: 12px;
+      right: 12px;
+      bottom: 12px;
+      width: auto;
+    }
+    .page-title { font-size: 18px; }
+    .hint { display: none; }
+  }
+</style>
+</head>
+<body>
+  <div class="page-title">바위너구리 웹펫</div>
+  <div class="hint">클릭하면 가끔 말함 · 드래그 가능 · 대체로 조용함</div>
+
+  <div id="petWrap">
+    <div id="bubble" class="bubble">...</div>
+    <div id="hyrax" class="hyrax">
+      <div class="shadow"></div>
+      <div class="tail"></div>
+      <div class="body"></div>
+      <div class="belly"></div>
+      <div class="head">
+        <div class="ear left"></div>
+        <div class="ear right"></div>
+        <div class="eye left"></div>
+        <div class="eye right"></div>
+        <div class="nose"></div>
+        <div class="mouth"></div>
+      </div>
+      <div class="paw left"></div>
+      <div class="paw right"></div>
+      <div class="phone"></div>
+      <div id="snack" class="snack">🍙</div>
+    </div>
+  </div>
+
+  <div id="ball" class="ball"></div>
+
+  <div class="controls">
+    <b>바위너구리 돌보기</b>
+    <div class="btn-grid">
+      <button onclick="feedHyrax()">🍙 밥주기</button>
+      <button onclick="playBall()">🟠 공놀이</button>
+      <button onclick="showFortune()">🔮 오늘의 운세</button>
+      <button onclick="toggleRps()">✊ 가위바위보</button>
+    </div>
+    <div id="rpsBox" class="rps-box">
+      <button onclick="playRps('가위')">✌️</button>
+      <button onclick="playRps('바위')">✊</button>
+      <button onclick="playRps('보')">🖐️</button>
+    </div>
+    클릭: 말풍선<br>
+    드래그: 이동<br>
+    대체로 별말 없음
+  </div>
+
+<script>
+  const petWrap = document.getElementById('petWrap');
+  const hyrax = document.getElementById('hyrax');
+  const bubble = document.getElementById('bubble');
+  const ball = document.getElementById('ball');
+  const rpsBox = document.getElementById('rpsBox');
+
+  let x = 120;
+  let y = 180;
+  let dx = 0.18;
+  let dy = 0.1;
+  let dragging = false;
+  let dragOffsetX = 0;
+  let dragOffsetY = 0;
+  let bubbleTimer = null;
+  let lastNoonTalkDate = '';
+  let busyUntil = 0;
+  let rpsBusy = false;
+
+  const quietLines = [
+    '...',
+    '음...',
+    '그냥 있음',
+    '바위가 좋다...',
+    '별일 없음',
+    '존버 중...',
+    '오늘도 조용히...',
+    '흠...',
+    '누워있고 싶다...'
+  ];
+
+  const stockLines = [
+    '물타기중...',
+    '존버는 승리한다!',
+    '오늘도 하락장..',
+    '평단 낮추는 중...',
+    '이건 조정이다...',
+    '손절은 모르는 단어다',
+    '파란불이 익숙해...',
+    '계좌가 바위처럼 단단해짐',
+    '내일은 오르겠지...'
+  ];
+
+  const fortunes = [
+    '오늘은 무리하지 않으면 이긴다.',
+    '작은 귀찮음을 처리하면 큰 일이 줄어든다.',
+    '오전보다 오후가 낫다. 천천히 가자.',
+    '말을 아끼면 체력이 남는다.',
+    '오늘의 행운은 따뜻한 밥에서 온다.',
+    '생각보다 별일 아니다. 일단 해라.',
+    '돈 쓰기 전 장바구니에 하루 묵혀라.',
+    '기분이 흔들려도 손은 느리게 움직여라.',
+    '연락 하나가 일을 쉽게 만든다.',
+    '오늘은 정리운이 있다. 책상부터 치워라.',
+    '괜히 급하게 사면 후회한다. 특히 주식.',
+    '오래 미룬 일이 생각보다 빨리 끝난다.',
+    '작은 칭찬을 받거나 줄 일이 있다.',
+    '오늘은 커피보다 물이 이긴다.',
+    '기대 안 한 곳에서 힌트가 온다.',
+    '감으로 움직이지 말고 숫자를 봐라.',
+    '귀찮은 메시지에 답하면 마음이 편해진다.',
+    '한 번 쉬어야 오래 간다.',
+    '오늘은 반박보다 침묵이 강하다.',
+    '지출운 주의. 귀여운 건 특히 위험하다.',
+    '평단보다 멘탈 관리가 우선이다.',
+    '일단 밥 먹고 다시 생각해라.',
+    '오늘은 느린 사람이 최종 승자다.',
+    '작게 시작하면 생각보다 멀리 간다.',
+    '실수해도 복구 가능하다. 호들갑 금지.',
+    '좋은 아이디어는 샤워하거나 누웠을 때 온다.',
+    '괜히 남의 속도 따라가지 마라.',
+    '오늘은 저장 버튼을 자주 눌러라.',
+    '마감 전 30분에 집중력이 오른다.',
+    '너무 진지해지지 않으면 운이 좋아진다.'
+  ];
+
+  function showBubble(text, stockMode = false, duration = 2600) {
+    bubble.textContent = text;
+    bubble.classList.add('show');
+
+    hyrax.classList.toggle('stock-mode', stockMode);
+    hyrax.classList.remove('sleep-mode');
+
+    clearTimeout(bubbleTimer);
+    bubbleTimer = setTimeout(() => {
+      bubble.classList.remove('show');
+      hyrax.classList.remove('stock-mode');
+      hyrax.classList.remove('eating-mode');
+    }, duration);
+  }
+
+  function randomTalk(force = false) {
+    if (Date.now() < busyUntil) return;
+
+    const now = new Date();
+    const todayKey = now.toDateString();
+
+    if (now.getHours() === 12 && lastNoonTalkDate !== todayKey) {
+      lastNoonTalkDate = todayKey;
+      showBubble('밥은먹었냐....', false, 5000);
+      return;
+    }
+
+    if (!force && Math.random() > 0.008) return;
+
+    const stockMode = Math.random() < 0.28;
+
+    if (stockMode) {
+      const line = stockLines[Math.floor(Math.random() * stockLines.length)];
+      showBubble(line, true, 3200);
+    } else {
+      const line = quietLines[Math.floor(Math.random() * quietLines.length)];
+      showBubble(line, false, 2200);
+    }
+  }
+
+  function movePet() {
+    if (!dragging) {
+      x += dx;
+      y += dy;
+
+      const maxX = window.innerWidth - 140;
+      const maxY = window.innerHeight - 150;
+
+      if (x < 0 || x > maxX) {
+        dx *= -1;
+        x = Math.max(0, Math.min(maxX, x));
+      }
+
+      if (y < 70 || y > maxY) {
+        dy *= -1;
+        y = Math.max(70, Math.min(maxY, y));
+      }
+
+      if (Math.random() < 0.003) {
+        dx = (Math.random() > 0.5 ? 1 : -1) * (0.08 + Math.random() * 0.28);
+        dy = (Math.random() > 0.5 ? 1 : -1) * (0.05 + Math.random() * 0.18);
+      }
+
+      if (Math.random() < 0.0008 && Date.now() > busyUntil) {
+        hyrax.classList.add('sleep-mode');
+        setTimeout(() => hyrax.classList.remove('sleep-mode'), 4500);
+      }
+
+      petWrap.style.left = x + 'px';
+      petWrap.style.top = y + 'px';
+    }
+
+    randomTalk(false);
+    requestAnimationFrame(movePet);
+  }
+
+  function feedHyrax() {
+    busyUntil = Date.now() + 3500;
+    hyrax.classList.add('eating-mode');
+    hyrax.classList.remove('stock-mode');
+    hyrax.classList.remove('sleep-mode');
+    showBubble('밥 조아...', false, 3200);
+  }
+
+  function playBall() {
+    busyUntil = Date.now() + 4200;
+    showBubble('공이다...', false, 2200);
+
+    const startX = x + 80;
+    const startY = y + 85;
+    ball.style.display = 'block';
+    ball.style.left = startX + 'px';
+    ball.style.top = startY + 'px';
+
+    let t = 0;
+    const direction = Math.random() > 0.5 ? 1 : -1;
+
+    const timer = setInterval(() => {
+      t += 1;
+      const bx = startX + direction * t * 7;
+      const by = startY + Math.sin(t / 4) * 28 - t * 0.7;
+      ball.style.left = bx + 'px';
+      ball.style.top = by + 'px';
+
+      if (t > 45) {
+        clearInterval(timer);
+        ball.style.display = 'none';
+        showBubble('잡았다... 아마도', false, 2200);
+      }
+    }, 35);
+  }
+
+  function showFortune() {
+    busyUntil = Date.now() + 4200;
+    const line = fortunes[Math.floor(Math.random() * fortunes.length)];
+    showBubble('오늘의 운세\n' + line, false, 4200);
+  }
+
+  function toggleRps() {
+    rpsBox.classList.toggle('show');
+    showBubble('한 판 할래?', false, 1600);
+  }
+
+  function setRpsButtonsDisabled(disabled) {
+    rpsBox.querySelectorAll('button').forEach(btn => {
+      btn.disabled = disabled;
+    });
+  }
+
+  function playRps(userPick) {
+    if (rpsBusy) return;
+
+    rpsBusy = true;
+    setRpsButtonsDisabled(true);
+    busyUntil = Date.now() + 5200;
+
+    const picks = ['가위', '바위', '보'];
+    const petPick = picks[Math.floor(Math.random() * picks.length)];
+
+    showBubble('자 시작..', false, 900);
+
+    setTimeout(() => {
+      showBubble('가위 바위...', false, 900);
+    }, 1000);
+
+    setTimeout(() => {
+      showBubble('보..!', false, 900);
+    }, 2000);
+
+    setTimeout(() => {
+      let result = '';
+      if (userPick === petPick) {
+        result = '비겼다... 다시 할래?';
+      } else if (
+        (userPick === '가위' && petPick === '보') ||
+        (userPick === '바위' && petPick === '가위') ||
+        (userPick === '보' && petPick === '바위')
+      ) {
+        result = '아. 내가 졌다.';
+      } else {
+        result = '내가 이김. 후후';
+      }
+
+      showBubble(`나는 ${petPick}.\n${result}`, false, 2600);
+    }, 3100);
+
+    setTimeout(() => {
+      rpsBusy = false;
+      setRpsButtonsDisabled(false);
+    }, 5400);
+  }
+
+  petWrap.addEventListener('click', () => {
+    randomTalk(true);
+  });
+
+  petWrap.addEventListener('mousedown', (e) => {
+    dragging = true;
+    dragOffsetX = e.clientX - x;
+    dragOffsetY = e.clientY - y;
+  });
+
+  window.addEventListener('mousemove', (e) => {
+    if (!dragging) return;
+    x = e.clientX - dragOffsetX;
+    y = e.clientY - dragOffsetY;
+    petWrap.style.left = x + 'px';
+    petWrap.style.top = y + 'px';
+  });
+
+  window.addEventListener('mouseup', () => {
+    dragging = false;
+  });
+
+  petWrap.addEventListener('touchstart', (e) => {
+    const t = e.touches[0];
+    dragging = true;
+    dragOffsetX = t.clientX - x;
+    dragOffsetY = t.clientY - y;
+  });
+
+  window.addEventListener('touchmove', (e) => {
+    if (!dragging) return;
+    const t = e.touches[0];
+    x = t.clientX - dragOffsetX;
+    y = t.clientY - dragOffsetY;
+    petWrap.style.left = x + 'px';
+    petWrap.style.top = y + 'px';
+  }, { passive: false });
+
+  window.addEventListener('touchend', () => {
+    dragging = false;
+  });
+
+  movePet();
+</script>
+</body>
+</html>
